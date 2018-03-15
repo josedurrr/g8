@@ -1,5 +1,6 @@
 # g8
-Statistics Department 
+Statistics Department Golden8Sports
 
-********************************************03/15/18********************************************
-Hoy basicamente es para aprender los ins-n-outs de gifthub para usarlos tanto en el proyecto como en la U.
+Head: Ignacio Brenes
+       Body: Luis Monge
+             Pablo Durán
