@@ -1,2 +1,101 @@
-###########################################################################################################################################
-Aqui va el Script Parceeeeee
+load("C:/Users/luisd/Desktop/G8 Analysis/Players by Sport.rds")
+options(max.print=10000)
+options(scipen=999)
+library(lattice)
+mat2=mat[,-c(5,6,7,8,9,10,11,12)]
+names(mat2)
+smat=as.data.frame(scale(mat2))
+km=kmeans(smat, centers=5)
+sort(km$cluster)
+km
+##Remover LUCK017 y VAW1095
+cbind(mat2,1:667)
+
+fenix=mat2[-c(538,397),]
+smat=as.data.frame(scale(fenix))
+km=kmeans(smat, centers=3)
+km
+result.km=0
+for (i in 1:100000) {
+  km=kmeans(smat,centers = 3)
+  result.km[i]=km$betweenss/km$totss
+}
+hist(result.km)
+table(result.km)
+km
+
+library(cluster)
+library(fpc)
+plotcluster(smat,km$cluster)
+is.vector(km$cluster)
+master=as.data.frame(cbind(fenix,km$cluster))
+attach(master)
+names(master)
+master=cbind(master, Net/Count, Win/Count, Risk/Count, Net/Risk, `Total Wins`/Count)
+colnames(master)=c("NET","WIN","RISK","COUNT","TOTWINS","CLUSTER","AVG. NET","AVG. WIN","AVG. RISK", "HOLD%", "WIN%")
+attach(master)
+##Separar según cluster
+names(master)
+master1=master[CLUSTER==1,]
+master2=master[CLUSTER==2,]
+master3=master[CLUSTER==3,]
+
+master1=master1[,-6]
+master2=master2[,-6]
+master3=master3[,-6]
+
+cbind(km$centers, km$size)
+
+summary(master1)
+summary(master2)
+summary(master3)
+
+#Estoy teniendo problemas porque los datos están muy pegados entre sí, aunque puedo rescatar
+#que más o menos sé el análisis que debo hacer. Tirar descriptivos sobre los clusters extremos
+#y así poder explicar cuales son los jugadores que más pierden y cuales son los que más ganan
+#más sus caracteristicas.
+#
+#Pero me detengo aquí. Quiero separar las apuestas por deportes para ver si así es más fácil
+#separar cada cluster.
+#
+#
+#
+#
+#
+#
+
+##K-MEANS para cluster 1
+cluster1=as.data.frame(scale(master1[,1:5]))
+kmc1=kmeans(cluster1, centers=4)
+cbind(kmc1$centers, kmc1$size)
+result.km=0
+for (i in 1:10000) {
+  kmc1=kmeans(cluster1,centers = 4)
+  result.km[i]=kmc1$betweenss/kmc1$totss
+}
+hist(result.km)
+
+#########################################################################################################
+plotcluster(cluster1,kmc1$cluster)
+is.vector(km$cluster)
+master=as.data.frame(cbind(fenix,km$cluster))
+attach(master)
+names(master)
+master=cbind(master, Net/Count, Win/Count, Risk/Count, Net/Risk, `Total Wins`/Count)
+colnames(master)=c("NET","WIN","RISK","COUNT","TOTWINS","CLUSTER","AVG. NET","AVG. WIN","AVG. RISK", "HOLD%", "WIN%")
+attach(master)
+##Separar según cluster
+names(master)
+master1=master[CLUSTER==1,]
+master2=master[CLUSTER==2,]
+master3=master[CLUSTER==3,]
+
+master1=master1[,-6]
+master2=master2[,-6]
+master3=master3[,-6]
+
+cbind(km$centers, km$size)
+
+summary(master1)
+summary(master2)
+summary(master3)
