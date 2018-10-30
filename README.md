@@ -15,3 +15,5 @@ Todos los cambios realizados pueden ser visualizados desde cualquier lugar en la
                      
 A line I wrote on my local computer
 adding a line
+
+This is a line from RStudio
