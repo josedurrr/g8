@@ -12,3 +12,6 @@ Todos los cambios realizados pueden ser visualizados desde cualquier lugar en la
                      - Pull-request:propuesta de cambio abierta a discusion
                      - Merge: importar el pull request al master
                      - En los comentarios se puede etiquetar a una persona en especifico ultilizando el @, ademas de emojis y gifs.
+
+
+gsodfaijobrgoiasjdofbafoihasiofbaiosnjdfiasjdnfoiasdf
