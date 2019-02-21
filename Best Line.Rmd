@@ -1,0 +1,30 @@
+---
+title: "Best Line"
+author: "G8 STATS"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+  html_document: 
+    self_contained: no
+  word_document: default
+  fontsize: 10pt
+---
+
+```{r include=FALSE}
+suppressWarnings(suppressPackageStartupMessages(library(knitr)))
+suppressWarnings(suppressPackageStartupMessages(library(markdown)))
+suppressWarnings(suppressPackageStartupMessages(library(rmarkdown)))
+suppressWarnings(suppressPackageStartupMessages(library(RODBC)))
+suppressWarnings(suppressPackageStartupMessages(library(tidyverse)))
+suppressWarnings(suppressPackageStartupMessages(library(lubridate)))
+suppressWarnings(suppressPackageStartupMessages(library(lattice)))
+suppressWarnings(suppressPackageStartupMessages(library(stringr)))
+suppressWarnings(suppressPackageStartupMessages(library(ggmap)))
+suppressWarnings(suppressPackageStartupMessages(library(leaflet)))
+suppressWarnings(suppressPackageStartupMessages(library(DT)))
+suppressWarnings(suppressPackageStartupMessages(library(stringr)))
+suppressWarnings(suppressPackageStartupMessages(library(lubridate)))
+options(scipen = 999)
+
+#Conexion miedo a la base miedo 
+con<-odbcConnect("RCon.30",uid = "sportbookdba",  pwd = "lumalu")
+```
