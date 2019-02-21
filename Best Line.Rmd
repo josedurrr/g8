@@ -25,6 +25,122 @@ suppressWarnings(suppressPackageStartupMessages(library(stringr)))
 suppressWarnings(suppressPackageStartupMessages(library(lubridate)))
 options(scipen = 999)
 
-#Conexion miedo a la base miedo 
+#Conexion miedo a la base de datos 
 con<-odbcConnect("RCon.30",uid = "sportbookdba",  pwd = "lumalu")
+
+#Query de todas las apuestas
+betdata <- sqlQuery(con, "SELECT * FROM [G8Apps].[dbo].[BI_WL] B WHERE B.SettledDate BETWEEN CAST('2019-02-01' AS DATE)
+                     AND CAST('2019-02-15' AS DATE)")
+
+#Para obtener los rotation numbers del Detail Description porque no existen
+betdata <- cbind(betdata,sub(".*\\[(.*)\\].*", "\\1", betdata$DetailDescription, perl=TRUE)) 
+
+#Nombre a la nueva columna
+colnames(betdata)[39]<-"rotNum"
+
+betdata$rotNum<-as.numeric(as.character(betdata$rotNum))
+
+#Los rotation numbers de los movimientos de los feeds solo son los impares, entonces remplazamos los rotNum pares con el anterior para que calcen.
+betdata<-betdata %>% mutate(rotNum=if_else(rotNum %% 2 == 0,rotNum-1,rotNum))
+
+####Pinnacle Lines####
+pinnifeed <- sqlQuery(con, "SELECT G.eventID, G.rotNum, G.awayTeam, G.homeTeam, VisitorSpread, visitorOdds,
+                      HomeSpread, HomeOdds, visitorML, homeML, Total, TotalOVer, TotalUnder, L.insertedDateTime,
+                      M.IdGame, S.VisitorScore, S.HomeScore 
+                      FROM PINNACLE.dbo.GAME AS G 
+                      INNER JOIN PINNACLE.dbo.LINE AS L on G.eventID = L.eventID
+                      INNER JOIN DGSDATA.dbo._web_gameImporterMatch AS M on G.eventID = M.eventID
+                      INNER JOIN DGSDATA.dbo.GAME AS S ON M.IdGame = S.IdGame
+                      WHERE G.leagueID = 487 and G.gameDT BETWEEN '2019-02-01' AND '2019-02-15'
+                      AND L.isAlternative = 0 and L.periodID = 0 and M.periodID = 0
+                      ORDER BY G.eventID, L.insertedDateTime")
+
+pinnitime=pinnifeed %>%
+  mutate(Score=VisitorScore+HomeScore) %>% 
+  select(IdGame,rotNum,awayTeam,homeTeam,Total,TotalOVer,TotalUnder,Score,insertedDateTime) %>% 
+    filter(Total!=lag(Total,default = 1)) %>%
+  group_by(IdGame) %>%
+  mutate(Duration=as.numeric(round((lead(insertedDateTime)-insertedDateTime)/60,2))) %>% 
+  filter(!is.na(Duration))
+
+####CRIS Lines####
+crisfeed <- sqlQuery(con, "SELECT G.IdGame, G.VisitorNumber, VisitorTeam, HomeNumber, HomeTeam, AwaySpread, AwayJuice,
+  HomeSpread, HomeJuice, AwayMoneyLine, HomeMoneyLine, Total, TotalOverMoneyLine, TotalUnderMoneyLine, L.LastUpdateOn 
+                      FROM [G8Apps].[dbo].[BI_DGSGame] AS G INNER JOIN [G8Apps].[dbo].[BI_FeedData] AS L on G.IdGame = L.IdGame
+                      WHERE G.IdLeague = 3 and G.EventDate BETWEEN '2019-01-01' AND '2019-02-15'
+                      AND L.SportsbookId = 489 AND L.Period = 1
+                      ORDER BY G.IdGame, L.LastUpdateOn")
+
+####PPH Lines####
+pphfeed <- sqlQuery(con, "SELECT G.IdGame, G.VisitorNumber, VisitorTeam, HomeNumber, HomeTeam, AwaySpread, AwayJuice,
+  HomeSpread, HomeJuice, AwayMoneyLine, HomeMoneyLine, Total, TotalOverMoneyLine, TotalUnderMoneyLine, L.LastUpdateOn 
+                     FROM [G8Apps].[dbo].[BI_DGSGame] AS G INNER JOIN [G8Apps].[dbo].[BI_FeedData] AS L on G.IdGame = L.IdGame
+                     WHERE G.IdLeague = 3 and G.EventDate BETWEEN '2019-02-01' AND '2019-02-15'
+                     AND L.SportsbookId = 364 AND L.Period = 1
+                     ORDER BY G.IdGame, L.LastUpdateOn")
+
+####Heritage Lines####
+heritfeed <- sqlQuery(con, "SELECT G.IdGame, G.VisitorNumber, VisitorTeam, HomeNumber, HomeTeam, AwaySpread, AwayJuice,
+  HomeSpread, HomeJuice, AwayMoneyLine, HomeMoneyLine, Total, TotalOverMoneyLine, TotalUnderMoneyLine, L.LastUpdateOn 
+                      FROM [G8Apps].[dbo].[BI_DGSGame] AS G INNER JOIN [G8Apps].[dbo].[BI_FeedData] AS L on G.IdGame = L.IdGame
+                      WHERE G.IdLeague = 3 and G.EventDate BETWEEN '2019-02-01' AND '2019-02-15'
+                      AND L.SportsbookId = 19 AND L.Period = 1
+                      ORDER BY G.IdGame, L.LastUpdateOn")
+
+####FiveDimes Lines####
+fivedfeed <- sqlQuery(con, "SELECT G.IdGame, G.VisitorNumber, VisitorTeam, HomeNumber, HomeTeam, AwaySpread, AwayJuice,
+  HomeSpread, HomeJuice, AwayMoneyLine, HomeMoneyLine, Total, TotalOverMoneyLine, TotalUnderMoneyLine, L.LastUpdateOn 
+                     FROM [G8Apps].[dbo].[BI_DGSGame] AS G INNER JOIN [G8Apps].[dbo].[BI_FeedData] AS L on G.IdGame = L.IdGame
+                     WHERE G.IdLeague = 3 and G.EventDate BETWEEN '2019-02-01' AND '2019-02-15'
+                     AND L.SportsbookId = 92 AND L.Period = 1
+                     ORDER BY G.IdGame, L.LastUpdateOn")
+
+####Grande Lines####
+grandefeed <- sqlQuery(con, "SELECT G.IdGame, G.VisitorNumber, VisitorTeam, HomeNumber, HomeTeam, AwaySpread, AwayJuice,
+  HomeSpread, HomeJuice, AwayMoneyLine, HomeMoneyLine, Total, TotalOverMoneyLine, TotalUnderMoneyLine, L.LastUpdateOn 
+                      FROM [G8Apps].[dbo].[BI_DGSGame] AS G INNER JOIN [G8Apps].[dbo].[BI_FeedData] AS L on G.IdGame = L.IdGame
+                      WHERE G.IdLeague = 3 and G.EventDate BETWEEN '2019-02-01' AND '2019-02-15'
+                      AND L.SportsbookId = 39 AND L.Period = 1
+                      ORDER BY G.IdGame, L.LastUpdateOn")
+
+####Catalina Lines####
+catafeed <- sqlQuery(con, "SELECT G.IdGame, G.VisitorNumber, VisitorTeam, HomeNumber, HomeTeam, AwaySpread, AwayJuice,
+  HomeSpread, HomeJuice, AwayMoneyLine, HomeMoneyLine, Total, TotalOverMoneyLine, TotalUnderMoneyLine, L.LastUpdateOn 
+                      FROM [G8Apps].[dbo].[BI_DGSGame] AS G INNER JOIN [G8Apps].[dbo].[BI_FeedData] AS L on G.IdGame = L.IdGame
+                      WHERE G.IdLeague = 3 and G.EventDate BETWEEN '2019-02-01' AND '2019-02-15'
+                      AND L.SportsbookId = 10 AND L.Period = 1
+                      ORDER BY G.IdGame, L.LastUpdateOn")
+
+#### Yup ####
+
+pinnigame=pinnifeed %>% 
+  filter(date(insertedDateTime)=="2019-02-13" & rotNum==507) %>% 
+  filter(Total!=lag(Total,default = 1))
+
+
+
 ```
+
+Linea cuando el jugador puso la apuesta
+
+Para cada jugador
+  Para cada partido
+    Para cada casino
+
+```{r echo=FALSE}
+pinnitime %>% group_by(rotNum,IdGame) %>% summarise(n())
+
+betdata %>% group_by(rotNum,IdGame) %>% summarise(n())
+
+a=structure(numeric(0), class = "Date")
+row=unlist(unique(list(1:nrow(betdata))))
+for(i in 1:length(row)){
+  
+  a[i]<-(betdata[i,]$PlacedDate)
+  
+}
+
+
+
+```
+
