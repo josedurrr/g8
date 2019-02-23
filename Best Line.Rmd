@@ -26,7 +26,7 @@ suppressWarnings(suppressPackageStartupMessages(library(lubridate)))
 options(scipen = 999)
 
 #Conexion miedo a la base de datos 
-con<-odbcConnect("RCon.30",uid = "sportbookdba",  pwd = "lumalu")
+
 
 #Query de todas las apuestas
 betdata <- sqlQuery(con, "SELECT * FROM [G8Apps].[dbo].[BI_WL] B WHERE B.SettledDate BETWEEN CAST('2019-02-01' AS DATE)
