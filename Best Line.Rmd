@@ -11,6 +11,7 @@ output:
 
 ```{r include=FALSE}
 suppressWarnings(suppressPackageStartupMessages(library(knitr)))
+suppressWarnings(suppressPackageStartupMessages(library(chron)))
 suppressWarnings(suppressPackageStartupMessages(library(markdown)))
 suppressWarnings(suppressPackageStartupMessages(library(rmarkdown)))
 suppressWarnings(suppressPackageStartupMessages(library(RODBC)))
@@ -31,6 +32,8 @@ con<-odbcConnect("RCon.30",uid = "sportbookdba",  pwd = "lumalu")
 #Query de todas las apuestas
 betdata <- sqlQuery(con, "SELECT * FROM [G8Apps].[dbo].[BI_WL] B WHERE B.SettledDate BETWEEN CAST('2019-02-01' AS DATE)
                      AND CAST('2019-02-15' AS DATE)")
+
+betdata <- betdata
 
 #Para obtener los rotation numbers del Detail Description porque no existen
 betdata <- cbind(betdata,sub(".*\\[(.*)\\].*", "\\1", betdata$DetailDescription, perl=TRUE)) 
@@ -132,15 +135,24 @@ pinnitime %>% group_by(rotNum,IdGame) %>% summarise(n())
 
 betdata %>% group_by(rotNum,IdGame) %>% summarise(n())
 
-a=structure(numeric(0), class = "Date")
+class(betdata$PlacedDate)
+a=structure(0,class=c('POSIXt','POSIXct'))
+
+class(pinnitime$Total)
+
+b=c()
+
+class(pinnitime$insertedDateTime)
+
 row=unlist(unique(list(1:nrow(betdata))))
 for(i in 1:length(row)){
   
   a[i]<-(betdata[i,]$PlacedDate)
-  
+  b[i]<-(betdata[i,]$IdGame)
+  c<-cbind(a,b)
 }
 
 
-
+b[i]<-pinnitime %>% filter(insertedDateTime <=a[i]) %>% select(Total) %>% tail(1)
 ```
 
