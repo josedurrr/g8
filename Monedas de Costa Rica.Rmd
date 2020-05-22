@@ -1,0 +1,97 @@
+---
+date: "March 26, 2019"
+output:
+  word_document: default
+  html_document: default
+---
+
+```{r, setup, include=FALSE}
+library(readxl)
+library(knitr)
+library(dplyr)
+library(lattice)
+Saldos_de_Inventario <- read_excel("Saldos de Inventario.xlsx")
+Monedas_circulantes_en_Costa_Rica <- read_excel("Monedas circulantes en Costa Rica.xlsx")
+```
+
+-----------------------------------------------------------
+
+###Historia de la moneda de Costa Rica
+
+-----------------------------------------------------------
+
+* **Época Precolombina:** las transacciones se daban por medio del intercambio de alimentos (sal,cacao,maíz,plátanos,yuca,frijoles,etc.) o de otros bienes (herramientas,cerámica,algodón,mantas y objetos de oro).
+
+* **1492:** Cristóbal Colón toca tierra firme por primera vez en suelos costarricenses; razón por la que la moneda de Costa Rica es denominada Colón. Con la llegada de los españoles se estableció el sistema monetario español y las monedas eran fabricadas e oro y plata.
+
+* **1821:** Independencia de Costa Rica. Se siguió utilizando el sistema monetario español.
+
+* **1858:** Se funda el primer banco en Costa Rica, *El Banco Nacional Costarricense*; en el cual se emitieron billetes de 1, 2, 10, 20 pesos.
+
+* **1896:** Reforma monetaria. Se estableció, entre otras cosas, el Colón como unidad monetaria, dividido en 100 partes llamadas céntimos, que son las que seguimos utilizando hoy en día.
+
+* **Desde 1950:** el Banco Central es el encargado de llevar a cabo la emisión de monedas y de dictar la política monetaria del país.
+
+* **En la actualidad:** cuando viajes a Costa Rica te llamará la atención que los billetes son muy coloridos y cuentan con imágenes de seis de los ecosistemas que conforman la biodiversidad del país. Son una singular muestra, de la riqueza natural que ha colocado a Costa Rica en el mapa mundial como un país en el que la biodiversidad e interés por la naturaleza forman parte de su identidad.
+
+-----------------------------------------------------------
+
+###El Colón
+
+-----------------------------------------------------------
+
+**El Colón** es la moneda de Costa Rica, denominada así por Cristóbal Colón. El código de la divisa de Colones es CRC y el símbolo del Colón es ₡.
+
+* Actualmente circulan casi 26 millones de piezas de ₡500, y con la nueva contratación subiran a unos 32 millones.
+
+* El Banco Central de Costa Rica ha puesto en circulación una cantidad importante de monedas, casi 600 millones de piezas, cerca de 150 piezas de monedas por persona.
+
+* Las necesidades de monedas adicionales es una de las variables que se considera para estimas las compras.
+
+* Las monedas de ₡5 se retirarán en el 2020 y las monedas de ₡10 en el 2022, ya que su costo supera su valor facial y además tienen muy poco uso.
+
+* El Banco Central contrató 25 millones de monedas adicionales, que servirán para atender las necesidades del fin de año.
+
+* Entre las principales actividades se encuentran el pago de la recolección de café, la distribución de aguinaldos y las devoluciones en efectivo que realizan los comercios en Navidad.
+
+* Cada pieza de ¢500 tienen un costo de fabricación de ¢45,01; la de ¢100 de ¢39,19 y las de ¢50 de ¢35,26.
+
+-----------------------------------------------------------
+
+###Monedas circulantes en Costa Rica
+
+```{r echo=FALSE}
+Monedas_circulantes_en_Costa_Rica %>% kable()
+```
+
+\pagebreak
+
+###Cantidad de unidades por año de monedas de ₡5, ₡10 y ₡25  
+
+```{r echo=FALSE,warning=FALSE}
+tabla1<-Saldos_de_Inventario %>% filter(Denominación %in% c(5,10,25))
+
+tabla1 %>% group_by(Denominación,Año) %>% summarise(`Cantidad de Piezas`) %>% 
+kable(format.args = list(big.mark = ","))
+
+tabla1$`Cantidad de Piezas`<-paste(format(round(tabla1$`Cantidad de Piezas` / 1e6, 1), trim = TRUE))
+
+tabla1$`Cantidad de Piezas`<-as.numeric(tabla1$`Cantidad de Piezas`)
+
+xyplot(tabla1$`Cantidad de Piezas`~tabla1$Año,groups = tabla1$Denominación,type = "o",auto.key=list(columns = 5, cex=0.70),xlab = "Año", ylab = "Millones de Piezas", pch = 15, main = "Saldos de Inventario")
+```
+
+###Cantidad de unidades por año de monedas de ₡50, ₡100 y ₡500  
+
+```{r echo=FALSE,warning=FALSE}
+tabla2<-Saldos_de_Inventario %>% filter(Denominación %in% c(50,100,500))
+
+tabla2 %>% group_by(Denominación,Año) %>% summarise(`Cantidad de Piezas`) %>% 
+kable(format.args = list(big.mark = ","))
+
+tabla2$`Cantidad de Piezas`<-paste(format(round(tabla2$`Cantidad de Piezas` / 1e6, 1), trim = TRUE))
+
+tabla2$`Cantidad de Piezas`<-as.numeric(tabla2$`Cantidad de Piezas`)
+
+xyplot(tabla2$`Cantidad de Piezas`~tabla2$Año,groups = tabla2$Denominación,type = "o",auto.key=list(columns = 5, cex=0.70),xlab = "Año", ylab = "Millones de Piezas", pch = 15, main = "Saldos de Inventario")
+```
