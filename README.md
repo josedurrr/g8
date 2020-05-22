@@ -4,7 +4,7 @@ A travez de esta pagina vamos a poder colaborar en la mejora de cualquier codigo
 
 Todos los cambios realizados pueden ser visualizados desde cualquier lugar en la pagina ( https://josedurrr.github.io/g8/ )
 
-# Algunos tips para usar la pagina
+# Algunos tips para usar la pagina.
 
                      - Repository: donde esta todo
                      - Branch: hace una copia del master para ser editada

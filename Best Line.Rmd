@@ -31,9 +31,7 @@ con<-odbcConnect("RCon.30",uid = "sportbookdba",  pwd = "lumalu")
 
 #Query de todas las apuestas
 betdata <- sqlQuery(con, "SELECT * FROM [G8Apps].[dbo].[BI_WL] B WHERE B.SettledDate BETWEEN CAST('2019-02-01' AS DATE)
-                     AND CAST('2019-02-15' AS DATE)")
-
-betdata <- betdata
+                     AND CAST('2019-02-25' AS DATE)")
 
 #Para obtener los rotation numbers del Detail Description porque no existen
 betdata <- cbind(betdata,sub(".*\\[(.*)\\].*", "\\1", betdata$DetailDescription, perl=TRUE)) 
@@ -46,6 +44,9 @@ betdata$rotNum<-as.numeric(as.character(betdata$rotNum))
 #Los rotation numbers de los movimientos de los feeds solo son los impares, entonces remplazamos los rotNum pares con el anterior para que calcen.
 betdata<-betdata %>% mutate(rotNum=if_else(rotNum %% 2 == 0,rotNum-1,rotNum))
 
+vc1000=betdata %>% filter(Player=="VC1000" & League=="NBA" & str_detect(WagerPlay,"Total")) %>% 
+  select(IdGame,Result,Net,DetailDescription,rotNum,PlacedDate,Points,Odds)
+
 ####Pinnacle Lines####
 pinnifeed <- sqlQuery(con, "SELECT G.eventID, G.rotNum, G.awayTeam, G.homeTeam, VisitorSpread, visitorOdds,
                       HomeSpread, HomeOdds, visitorML, homeML, Total, TotalOVer, TotalUnder, L.insertedDateTime,
@@ -54,23 +55,15 @@ pinnifeed <- sqlQuery(con, "SELECT G.eventID, G.rotNum, G.awayTeam, G.homeTeam, 
                       INNER JOIN PINNACLE.dbo.LINE AS L on G.eventID = L.eventID
                       INNER JOIN DGSDATA.dbo._web_gameImporterMatch AS M on G.eventID = M.eventID
                       INNER JOIN DGSDATA.dbo.GAME AS S ON M.IdGame = S.IdGame
-                      WHERE G.leagueID = 487 and G.gameDT BETWEEN '2019-02-01' AND '2019-02-15'
+                      WHERE G.leagueID = 487 and G.gameDT BETWEEN '2019-02-01' AND '2019-02-25'
                       AND L.isAlternative = 0 and L.periodID = 0 and M.periodID = 0
                       ORDER BY G.eventID, L.insertedDateTime")
-
-pinnitime=pinnifeed %>%
-  mutate(Score=VisitorScore+HomeScore) %>% 
-  select(IdGame,rotNum,awayTeam,homeTeam,Total,TotalOVer,TotalUnder,Score,insertedDateTime) %>% 
-    filter(Total!=lag(Total,default = 1)) %>%
-  group_by(IdGame) %>%
-  mutate(Duration=as.numeric(round((lead(insertedDateTime)-insertedDateTime)/60,2))) %>% 
-  filter(!is.na(Duration))
 
 ####CRIS Lines####
 crisfeed <- sqlQuery(con, "SELECT G.IdGame, G.VisitorNumber, VisitorTeam, HomeNumber, HomeTeam, AwaySpread, AwayJuice,
   HomeSpread, HomeJuice, AwayMoneyLine, HomeMoneyLine, Total, TotalOverMoneyLine, TotalUnderMoneyLine, L.LastUpdateOn 
                       FROM [G8Apps].[dbo].[BI_DGSGame] AS G INNER JOIN [G8Apps].[dbo].[BI_FeedData] AS L on G.IdGame = L.IdGame
-                      WHERE G.IdLeague = 3 and G.EventDate BETWEEN '2019-01-01' AND '2019-02-15'
+                      WHERE G.IdLeague = 3 and G.EventDate BETWEEN '2019-01-01' AND '2019-02-25'
                       AND L.SportsbookId = 489 AND L.Period = 1
                       ORDER BY G.IdGame, L.LastUpdateOn")
 
@@ -78,7 +71,7 @@ crisfeed <- sqlQuery(con, "SELECT G.IdGame, G.VisitorNumber, VisitorTeam, HomeNu
 pphfeed <- sqlQuery(con, "SELECT G.IdGame, G.VisitorNumber, VisitorTeam, HomeNumber, HomeTeam, AwaySpread, AwayJuice,
   HomeSpread, HomeJuice, AwayMoneyLine, HomeMoneyLine, Total, TotalOverMoneyLine, TotalUnderMoneyLine, L.LastUpdateOn 
                      FROM [G8Apps].[dbo].[BI_DGSGame] AS G INNER JOIN [G8Apps].[dbo].[BI_FeedData] AS L on G.IdGame = L.IdGame
-                     WHERE G.IdLeague = 3 and G.EventDate BETWEEN '2019-02-01' AND '2019-02-15'
+                     WHERE G.IdLeague = 3 and G.EventDate BETWEEN '2019-02-01' AND '2019-02-25'
                      AND L.SportsbookId = 364 AND L.Period = 1
                      ORDER BY G.IdGame, L.LastUpdateOn")
 
@@ -86,7 +79,7 @@ pphfeed <- sqlQuery(con, "SELECT G.IdGame, G.VisitorNumber, VisitorTeam, HomeNum
 heritfeed <- sqlQuery(con, "SELECT G.IdGame, G.VisitorNumber, VisitorTeam, HomeNumber, HomeTeam, AwaySpread, AwayJuice,
   HomeSpread, HomeJuice, AwayMoneyLine, HomeMoneyLine, Total, TotalOverMoneyLine, TotalUnderMoneyLine, L.LastUpdateOn 
                       FROM [G8Apps].[dbo].[BI_DGSGame] AS G INNER JOIN [G8Apps].[dbo].[BI_FeedData] AS L on G.IdGame = L.IdGame
-                      WHERE G.IdLeague = 3 and G.EventDate BETWEEN '2019-02-01' AND '2019-02-15'
+                      WHERE G.IdLeague = 3 and G.EventDate BETWEEN '2019-02-01' AND '2019-02-25'
                       AND L.SportsbookId = 19 AND L.Period = 1
                       ORDER BY G.IdGame, L.LastUpdateOn")
 
@@ -94,7 +87,7 @@ heritfeed <- sqlQuery(con, "SELECT G.IdGame, G.VisitorNumber, VisitorTeam, HomeN
 fivedfeed <- sqlQuery(con, "SELECT G.IdGame, G.VisitorNumber, VisitorTeam, HomeNumber, HomeTeam, AwaySpread, AwayJuice,
   HomeSpread, HomeJuice, AwayMoneyLine, HomeMoneyLine, Total, TotalOverMoneyLine, TotalUnderMoneyLine, L.LastUpdateOn 
                      FROM [G8Apps].[dbo].[BI_DGSGame] AS G INNER JOIN [G8Apps].[dbo].[BI_FeedData] AS L on G.IdGame = L.IdGame
-                     WHERE G.IdLeague = 3 and G.EventDate BETWEEN '2019-02-01' AND '2019-02-15'
+                     WHERE G.IdLeague = 3 and G.EventDate BETWEEN '2019-02-01' AND '2019-02-25'
                      AND L.SportsbookId = 92 AND L.Period = 1
                      ORDER BY G.IdGame, L.LastUpdateOn")
 
@@ -102,7 +95,7 @@ fivedfeed <- sqlQuery(con, "SELECT G.IdGame, G.VisitorNumber, VisitorTeam, HomeN
 grandefeed <- sqlQuery(con, "SELECT G.IdGame, G.VisitorNumber, VisitorTeam, HomeNumber, HomeTeam, AwaySpread, AwayJuice,
   HomeSpread, HomeJuice, AwayMoneyLine, HomeMoneyLine, Total, TotalOverMoneyLine, TotalUnderMoneyLine, L.LastUpdateOn 
                       FROM [G8Apps].[dbo].[BI_DGSGame] AS G INNER JOIN [G8Apps].[dbo].[BI_FeedData] AS L on G.IdGame = L.IdGame
-                      WHERE G.IdLeague = 3 and G.EventDate BETWEEN '2019-02-01' AND '2019-02-15'
+                      WHERE G.IdLeague = 3 and G.EventDate BETWEEN '2019-02-01' AND '2019-02-25'
                       AND L.SportsbookId = 39 AND L.Period = 1
                       ORDER BY G.IdGame, L.LastUpdateOn")
 
@@ -110,27 +103,99 @@ grandefeed <- sqlQuery(con, "SELECT G.IdGame, G.VisitorNumber, VisitorTeam, Home
 catafeed <- sqlQuery(con, "SELECT G.IdGame, G.VisitorNumber, VisitorTeam, HomeNumber, HomeTeam, AwaySpread, AwayJuice,
   HomeSpread, HomeJuice, AwayMoneyLine, HomeMoneyLine, Total, TotalOverMoneyLine, TotalUnderMoneyLine, L.LastUpdateOn 
                       FROM [G8Apps].[dbo].[BI_DGSGame] AS G INNER JOIN [G8Apps].[dbo].[BI_FeedData] AS L on G.IdGame = L.IdGame
-                      WHERE G.IdLeague = 3 and G.EventDate BETWEEN '2019-02-01' AND '2019-02-15'
+                      WHERE G.IdLeague = 3 and G.EventDate BETWEEN '2019-02-01' AND '2019-02-25'
                       AND L.SportsbookId = 10 AND L.Period = 1
                       ORDER BY G.IdGame, L.LastUpdateOn")
-
-#### Yup ####
-
-pinnigame=pinnifeed %>% 
-  filter(date(insertedDateTime)=="2019-02-13" & rotNum==507) %>% 
-  filter(Total!=lag(Total,default = 1))
-
-
-
 ```
 
-Linea cuando el jugador puso la apuesta
+```{r include=FALSE}
+times.slopes=pinnifeed %>%
+    group_by(IdGame) %>%
+    mutate(Score=VisitorScore+HomeScore) %>% 
+    select(IdGame,rotNum,Score,awayTeam,homeTeam,Pinnitot=Total,PinniTime=insertedDateTime) %>% 
+    filter(Pinnitot!=lag(Pinnitot,default = 1)) %>%
+    mutate(PinniDuration=as.numeric(round((lead(PinniTime)-PinniTime)/60,2))) %>% 
+    mutate(ABCDE.Pinni=case_when(strftime(PinniTime, "%H:%M:%S")<= "07:00:00"~ "A",
+                                 "07:00:01" <= strftime(PinniTime, "%H:%M:%S") & strftime(PinniTime, "%H:%M:%S") <= "11:30:00"~ "B",
+                                 "11:30:01" <= strftime(PinniTime, "%H:%M:%S") & strftime(PinniTime, "%H:%M:%S") <= "14:00:00"~ "C",
+                                 "14:00:01" <= strftime(PinniTime, "%H:%M:%S") & strftime(PinniTime, "%H:%M:%S") <= "19:00:00"~ "D",
+                                 strftime(PinniTime, "%H:%M:%S")>= "19:00:01"~ "E")) %>% 
+    group_by(IdGame,ABCDE.Pinni) %>% 
+    summarise(`1st`=round(head(Pinnitot,1),2),Last=round(tail(Pinnitot,1),2),M=Last-`1st`) %>% 
+    select(IdGame,ABCDE.Pinni,M) %>% 
+    spread(ABCDE.Pinni,M,fill = 0) %>% 
+    mutate(Slope = case_when(
+        B=="0" & C=="0" & D=="0" ~ "con.con.con",
+        B=="0" & C=="0" & D>"0" ~ "con.con.cre",
+        B=="0" & C=="0" & D<"0" ~ "con.con.decre",
+        B=="0" & C>"0" & D=="0" ~ "con.cre.con",
+        B=="0" & C<"0" & D=="0" ~ "con.decre.con",
+        B>"0" & C=="0" & D=="0" ~ "cre.con.con",
+        B<"0" & C=="0" & D=="0" ~ "decre.con.con",
+        
+        B>"0" & C>"0" & D=="0" ~ "cre.cre.con",
+        B>"0" & C<"0" & D=="0" ~ "cre.decre.con",
+        B<"0" & C<"0" & D=="0" ~ "decre.decre.con",
+        B<"0" & C>"0" & D=="0" ~ "decre.cre.con",
+        
+        B>"0" & C=="0" & D>"0" ~ "cre.con.cre",
+        B>"0" & C=="0" & D<"0" ~ "cre.con.decre",
+        B<"0" & C=="0" & D>"0" ~ "decre.con.cre",
+        B<"0" & C=="0" & D<"0" ~ "decre.con.decre",
+        
+        B=="0" & C>"0" & D>"0" ~ "con.cre.cre",
+        B=="0" & C>"0" & D<"0" ~ "con.cre.decre",
+        B=="0" & C<"0" & D>"0" ~ "con.decre.cre",
+        B=="0" & C<"0" & D<"0" ~ "con.decre.decre",
+        
+        B>"0" & C>"0" & D>"0" ~ "cre.cre.cre",
+        B>"0" & C>"0" & D<"0" ~ "cre.cre.decre",
+        B>"0" & C<"0" & D>"0" ~ "cre.decre.cre",
+        B>"0" & C<"0" & D<"0" ~ "cre.decre.decre",
+        B<"0" & C>"0" & D>"0" ~ "decre.cre.cre",
+        B<"0" & C>"0" & D<"0" ~ "decre.cre.decre",
+        B<"0" & C<"0" & D>"0" ~ "decre.decre.cre",
+        B<"0" & C<"0" & D<"0" ~ "decre.decre.decre",
+        
+        B>"0" & C>"0" & D>"0" ~ "cre.cre.cre",
+        B>"0" & C>"0" & D<"0" ~ "cre.cre.decre",
+        B<"0" & C>"0" & D>"0" ~ "decre.cre.cre",
+        B<"0" & C>"0" & D<"0" ~ "decre.cre.decre",
+        B>"0" & C<"0" & D>"0" ~ "cre.decre.cre",
+        B>"0" & C<"0" & D<"0" ~ "cre.decre.decre",
+        B<"0" & C<"0" & D>"0" ~ "decre.decre.cre",
+        B<"0" & C<"0" & D<"0" ~ "decre.decre.decre",
+        
+        B>"0" & C>"0" & D>"0" ~ "cre.cre.cre",
+        B>"0" & C<"0" & D>"0" ~ "cre.decre.cre",
+        B<"0" & C<"0" & D>"0" ~ "decre.decre.cre",
+        B<"0" & C>"0" & D>"0" ~ "decre.cre.cre",
+        B>"0" & C>"0" & D<"0" ~ "cre.cre.decre",
+        B>"0" & C<"0" & D<"0" ~ "cre.decre.decre",
+        B<"0" & C<"0" & D<"0" ~ "decre.decre.decre",
+        B<"0" & C>"0" & D<"0" ~ "decre.cre.decre"
+    )) 
 
-Para cada jugador
-  Para cada partido
-    Para cada casino
+scores.closings=pinnifeed %>%
+  group_by(IdGame) %>%
+  mutate(Score=VisitorScore+HomeScore) %>% 
+  filter(!is.na(Total)) %>% 
+  summarise(Score=Score[length(Score)],Closing=Total[length(Total)]) %>% 
+  mutate(Result=if_else(Score>Closing,"Over","Under"))
+```
+
+#Pinnacle
 
 ```{r echo=FALSE}
+left_join(times.slopes,scores.closings,by="IdGame") %>%
+    group_by(Slope,Result) %>% 
+    summarise(N=n()) %>% 
+    spread(Result,N,fill=0) %>% 
+    group_by(Slope) %>% 
+    summarise(Over,Over.Perc=round(Over/sum(Over+Under)*100,2),Under,Under.Perct=round(Under/sum(Over+Under)*100,2)) %>% kable()
+```
+
+```{r eval=FALSE, include=FALSE}
 pinnitime %>% group_by(rotNum,IdGame) %>% summarise(n())
 
 betdata %>% group_by(rotNum,IdGame) %>% summarise(n())
@@ -154,5 +219,214 @@ for(i in 1:length(row)){
 
 
 b[i]<-pinnitime %>% filter(insertedDateTime <=a[i]) %>% select(Total) %>% tail(1)
+
 ```
 
+```{r eval=FALSE, include=FALSE}
+mydata=list()
+
+for(i in 1:length(vc1000$DetailDescription)){
+
+pinni=pinnifeed %>%
+  group_by(IdGame) %>%
+  mutate(Score=VisitorScore+HomeScore) %>% 
+  select(IdGame,rotNum,Score,awayTeam,homeTeam,Pinnitot=Total,PinniTime=insertedDateTime) %>% 
+  filter(Pinnitot!=lag(Pinnitot,default = 1)) %>%
+  mutate(PinniDuration=as.numeric(round((lead(PinniTime)-PinniTime)/60,2))) %>% 
+  mutate(ABCDE.Pinni=case_when(strftime(PinniTime, "%H:%M:%S")<= "07:00:00"~ "A",
+                                 "07:00:01" <= strftime(PinniTime, "%H:%M:%S") & strftime(PinniTime, "%H:%M:%S") <= "11:30:00"~ "B",
+                                 "11:30:01" <= strftime(PinniTime, "%H:%M:%S") & strftime(PinniTime, "%H:%M:%S") <= "14:00:00"~ "C",
+                                 "14:00:01" <= strftime(PinniTime, "%H:%M:%S") & strftime(PinniTime, "%H:%M:%S") <= "19:00:00"~ "D",
+                                 strftime(PinniTime, "%H:%M:%S")>= "19:00:01"~ "E")) %>% 
+  filter(rotNum==vc1000[i,5] & PinniTime<=vc1000[i,6]) %>% tail(1)
+
+cris=crisfeed %>%
+  filter(!is.na(Total) & Total>160) %>% 
+  group_by(IdGame) %>%
+  select(IdGame,rotNum=VisitorNumber,CrisTot=Total,CrisTime=LastUpdateOn) %>% 
+  filter(CrisTot!=lag(CrisTot,default = 1)) %>%
+  mutate(CrisDuration=as.numeric(round((lead(CrisTime)-CrisTime)/60,2))) %>% 
+  mutate(ABCDE.Cris=case_when(strftime(CrisTime, "%H:%M:%S")<= "07:00:00"~ "A",
+                                 "07:00:01" <= strftime(CrisTime, "%H:%M:%S") & strftime(CrisTime, "%H:%M:%S") <= "11:30:00"~ "B",
+                                 "11:30:01" <= strftime(CrisTime, "%H:%M:%S") & strftime(CrisTime, "%H:%M:%S") <= "14:00:00"~ "C",
+                                 "14:00:01" <= strftime(CrisTime, "%H:%M:%S") & strftime(CrisTime, "%H:%M:%S") <= "19:00:00"~ "D",
+                                 strftime(CrisTime, "%H:%M:%S")>= "19:00:01"~ "E")) %>%
+  filter(rotNum==vc1000[i,5] & CrisTime<=vc1000[i,6]) %>% tail(1)
+
+pph=pphfeed %>%
+  filter(!is.na(Total) & Total>160) %>% 
+  group_by(IdGame) %>%
+  select(IdGame,rotNum=VisitorNumber,PPHTot=Total,PPHTime=LastUpdateOn) %>% 
+  filter(PPHTot!=lag(PPHTot,default = 1)) %>%
+  mutate(PPHDuration=as.numeric(round((lead(PPHTime)-PPHTime)/60,2))) %>% 
+  mutate(ABCDE.Pph=case_when(strftime(PPHTime, "%H:%M:%S")<= "07:00:00"~ "A",
+                                 "07:00:01" <= strftime(PPHTime, "%H:%M:%S") & strftime(PPHTime, "%H:%M:%S") <= "11:30:00"~ "B",
+                                 "11:30:01" <= strftime(PPHTime, "%H:%M:%S") & strftime(PPHTime, "%H:%M:%S") <= "14:00:00"~ "C",
+                                 "14:00:01" <= strftime(PPHTime, "%H:%M:%S") & strftime(PPHTime, "%H:%M:%S") <= "19:00:00"~ "D",
+                                 strftime(PPHTime, "%H:%M:%S")>= "19:00:01"~ "E")) %>%
+  filter(rotNum==vc1000[i,5] & PPHTime<=vc1000[i,6]) %>% tail(1)
+
+fived=fivedfeed %>%
+  filter(!is.na(Total) & Total>160) %>% 
+  group_by(IdGame) %>%
+  select(IdGame,rotNum=VisitorNumber,FiveDTot=Total,FiveDTime=LastUpdateOn) %>% 
+  filter(FiveDTot!=lag(FiveDTot,default = 1)) %>%
+  mutate(FiveDDuration=as.numeric(round((lead(FiveDTime)-FiveDTime)/60,2))) %>% 
+  mutate(ABCDE.FiveD=case_when(strftime(FiveDTime, "%H:%M:%S")<= "07:00:00"~ "A",
+                                 "07:00:01" <= strftime(FiveDTime, "%H:%M:%S") & strftime(FiveDTime, "%H:%M:%S") <= "11:30:00"~ "B",
+                                 "11:30:01" <= strftime(FiveDTime, "%H:%M:%S") & strftime(FiveDTime, "%H:%M:%S") <= "14:00:00"~ "C",
+                                 "14:00:01" <= strftime(FiveDTime, "%H:%M:%S") & strftime(FiveDTime, "%H:%M:%S") <= "19:00:00"~ "D",
+                                 strftime(FiveDTime, "%H:%M:%S")>= "19:00:01"~ "E")) %>%
+  filter(rotNum==vc1000[i,4] & FiveDTime<=vc1000[i,5]) %>% tail(1)
+
+grande=grandefeed %>%
+  filter(!is.na(Total) & Total>160) %>% 
+  group_by(IdGame) %>%
+  select(IdGame,rotNum=VisitorNumber,GrandeTot=Total,GrandeTime=LastUpdateOn) %>% 
+  filter(GrandeTot!=lag(GrandeTot,default = 1)) %>%
+  mutate(GrandeDuration=as.numeric(round((lead(GrandeTime)-GrandeTime)/60,2))) %>% 
+  mutate(ABCDE.Grande=case_when(strftime(GrandeTime, "%H:%M:%S")<= "07:00:00"~ "A",
+                                 "07:00:01" <= strftime(GrandeTime, "%H:%M:%S") & strftime(GrandeTime, "%H:%M:%S") <= "11:30:00"~ "B",
+                                 "11:30:01" <= strftime(GrandeTime, "%H:%M:%S") & strftime(GrandeTime, "%H:%M:%S") <= "14:00:00"~ "C",
+                                 "14:00:01" <= strftime(GrandeTime, "%H:%M:%S") & strftime(GrandeTime, "%H:%M:%S") <= "19:00:00"~ "D",
+                                 strftime(GrandeTime, "%H:%M:%S")>= "19:00:01"~ "E")) %>%
+  filter(rotNum==vc1000[i,5] & GrandeTime<=vc1000[i,6]) %>% tail(1)
+
+cata=catafeed %>%
+  filter(!is.na(Total) & Total>160) %>% 
+  group_by(IdGame) %>%
+  select(IdGame,rotNum=VisitorNumber,CataTot=Total,CataTime=LastUpdateOn) %>% 
+  filter(CataTot!=lag(CataTot,default = 1)) %>%
+  mutate(CataDuration=as.numeric(round((lead(CataTime)-CataTime)/60,2))) %>% 
+  mutate(ABCDE.Cata=case_when(strftime(CataTime, "%H:%M:%S")<= "07:00:00"~ "A",
+                                 "07:00:01" <= strftime(CataTime, "%H:%M:%S") & strftime(CataTime, "%H:%M:%S") <= "11:30:00"~ "B",
+                                 "11:30:01" <= strftime(CataTime, "%H:%M:%S") & strftime(CataTime, "%H:%M:%S") <= "14:00:00"~ "C",
+                                 "14:00:01" <= strftime(CataTime, "%H:%M:%S") & strftime(CataTime, "%H:%M:%S") <= "19:00:00"~ "D",
+                                 strftime(CataTime, "%H:%M:%S")>= "19:00:01"~ "E")) %>%
+  filter(rotNum==vc1000[i,5] & CataTime<=vc1000[i,6]) %>% tail(1)
+
+mydata[[i]]=vc1000[i,] %>% 
+  left_join(pinni) %>% 
+  left_join(cris) %>% 
+  left_join(pph) %>% 
+  left_join(fived) %>% 
+  left_join(grande) %>% 
+  left_join(cata)
+}
+mydf=do.call(rbind.data.frame, mydata)
+
+#mydf %>% write.csv("vc1000.csv")
+
+####################################################################################################
+for(i in 1:length(mydf$DetailDescription)){
+  
+  pinni=pinnifeed %>%
+    group_by(IdGame) %>%
+    mutate(Score=VisitorScore+HomeScore) %>% 
+    select(IdGame,rotNum,Score,awayTeam,homeTeam,prePinnitot=Total,prePinniTime=insertedDateTime) %>% 
+    filter(prePinnitot!=lag(prePinnitot,default = 1)) %>%
+    filter(rotNum==mydf[i,]$rotNum & prePinniTime<mydf[i,]$PinniTime) %>% tail(1)
+  
+  cris=crisfeed %>%
+    filter(!is.na(Total) & Total>160) %>% 
+    group_by(IdGame) %>%
+    select(IdGame,rotNum=VisitorNumber,preCrisTot=Total,preCrisTime=LastUpdateOn) %>% 
+    filter(preCrisTot!=lag(preCrisTot,default = 1)) %>%
+    filter(rotNum==mydf[i,]$rotNum & preCrisTime<mydf[i,]$CrisTime) %>% tail(1)
+  
+  pph=pphfeed %>%
+    filter(!is.na(Total) & Total>160) %>% 
+    group_by(IdGame) %>%
+    select(IdGame,rotNum=VisitorNumber,prePPHTot=Total,prePPHTime=LastUpdateOn) %>% 
+    filter(prePPHTot!=lag(prePPHTot,default = 1)) %>%
+    filter(rotNum==mydf[i,]$rotNum & prePPHTime<mydf[i,]$PPHTime) %>% tail(1)
+  
+  fived=fivedfeed %>%
+    filter(!is.na(Total) & Total>160) %>% 
+    group_by(IdGame) %>%
+    select(IdGame,rotNum=VisitorNumber,preFiveDTot=Total,preFiveDTime=LastUpdateOn) %>% 
+    filter(preFiveDTot!=lag(preFiveDTot,default = 1)) %>%
+    filter(rotNum==mydf[i,]$rotNum & preFiveDTime<mydf[i,]$FiveDTime) %>% tail(1)
+  
+  grande=grandefeed %>%
+    filter(!is.na(Total) & Total>160) %>% 
+    group_by(IdGame) %>%
+    select(IdGame,rotNum=VisitorNumber,preGrandeTot=Total,preGrandeTime=LastUpdateOn) %>% 
+    filter(preGrandeTot!=lag(preGrandeTot,default = 1)) %>%
+    filter(rotNum==mydf[i,]$rotNum & preGrandeTime<mydf[i,]$GrandeTime) %>% tail(1)
+  
+  cata=catafeed %>%
+    filter(!is.na(Total) & Total>160) %>% 
+    group_by(IdGame) %>%
+    select(IdGame,rotNum=VisitorNumber,preCataTot=Total,preCataTime=LastUpdateOn) %>% 
+    filter(preCataTot!=lag(preCataTot,default = 1)) %>%
+    filter(rotNum==mydf[i,]$rotNum & preCataTime<mydf[i,]$CataTime) %>% tail(1)
+  
+  mydata[[i]]=mydf[i,] %>% 
+    left_join(pinni) %>% 
+    left_join(cris) %>% 
+    left_join(pph) %>% 
+    left_join(fived) %>% 
+    left_join(grande) %>% 
+    left_join(cata)
+}
+
+mydf2=do.call(rbind.data.frame, mydata)
+# mydf2 %>% write.csv("prevc1000.csv")
+
+#######################################################################################################
+for(i in 1:length(mydf2$DetailDescription)){
+  
+  pinni=pinnifeed %>%
+    group_by(IdGame) %>%
+    mutate(Score=VisitorScore+HomeScore) %>% 
+    select(IdGame,rotNum,Score,awayTeam,homeTeam,postPinnitot=Total,postPinniTime=insertedDateTime) %>% 
+    filter(postPinnitot!=lag(postPinnitot,default = 1)) %>%
+    filter(rotNum==mydf2[i,]$rotNum & postPinniTime>mydf2[i,]$PinniTime) %>% head(1)
+  
+  cris=crisfeed %>%
+    filter(!is.na(Total) & Total>160) %>% 
+    group_by(IdGame) %>%
+    select(IdGame,rotNum=VisitorNumber,postCrisTot=Total,postCrisTime=LastUpdateOn) %>% 
+    filter(postCrisTot!=lag(postCrisTot,default = 1)) %>%
+    filter(rotNum==mydf2[i,]$rotNum & postCrisTime>mydf2[i,]$CrisTime) %>% head(1)
+  
+  pph=pphfeed %>%
+    filter(!is.na(Total) & Total>160) %>% 
+    group_by(IdGame) %>%
+    select(IdGame,rotNum=VisitorNumber,postPPHTot=Total,postPPHTime=LastUpdateOn) %>% 
+    filter(postPPHTot!=lag(postPPHTot,default = 1)) %>%
+    filter(rotNum==mydf2[i,]$rotNum & postPPHTime>mydf2[i,]$PPHTime) %>% head(1)
+  
+  fived=fivedfeed %>%
+    filter(!is.na(Total) & Total>160) %>% 
+    group_by(IdGame) %>%
+    select(IdGame,rotNum=VisitorNumber,postFiveDTot=Total,postFiveDTime=LastUpdateOn) %>% 
+    filter(postFiveDTot!=lag(postFiveDTot,default = 1)) %>%
+    filter(rotNum==mydf2[i,]$rotNum & postFiveDTime>mydf2[i,]$FiveDTime) %>% head(1)
+  
+  grande=grandefeed %>%
+    filter(!is.na(Total) & Total>160) %>% 
+    group_by(IdGame) %>%
+    select(IdGame,rotNum=VisitorNumber,postGrandeTot=Total,postGrandeTime=LastUpdateOn) %>% 
+    filter(postGrandeTot!=lag(postGrandeTot,default = 1)) %>%
+    filter(rotNum==mydf2[i,]$rotNum & postGrandeTime>mydf2[i,]$GrandeTime) %>% head(1)
+  
+  cata=catafeed %>%
+    filter(!is.na(Total) & Total>160) %>% 
+    group_by(IdGame) %>%
+    select(IdGame,rotNum=VisitorNumber,postCataTot=Total,postCataTime=LastUpdateOn) %>% 
+    filter(postCataTot!=lag(postCataTot,default = 1)) %>%
+    filter(rotNum==mydf2[i,]$rotNum & postCataTime>mydf2[i,]$CataTime) %>% head(1)
+  
+  mydata[[i]]=mydf2[i,] %>% 
+    left_join(pinni) %>% 
+    left_join(cris) %>% 
+    left_join(pph) %>% 
+    left_join(fived) %>% 
+    left_join(grande) %>% 
+    left_join(cata)
+}
+
+mydf3=do.call(rbind.data.frame, mydata)
+```
