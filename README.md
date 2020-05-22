@@ -1,6 +1,6 @@
 # Bienvenidos a la página de Gifthub para el Departamento de Estadística de Golden8Sports.
 
-A travez de esta pagina vamos a poder colaborar en la mejora de cualquier codigo relacionado al departamento. Ademas de opinar, consultar y ojala felicitar cualquier actualizacion en el trabajo a realizar.
+A travez de esta pagina vamos a poder colaborar en la mejora de cualquier codigo relacionado al departamento. Ademas de opinar, consultar y ojala felicitar cualquier actualizacion en el trabajo realizado.
 
 Todos los cambios realizados pueden ser visualizados desde cualquier lugar en la pagina ( https://josedurrr.github.io/g8/ )
 
